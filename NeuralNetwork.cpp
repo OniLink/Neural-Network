@@ -59,3 +59,31 @@ void NeuronLayer::resizeMatrix( unsigned int new_inputs, unsigned int new_output
 	output_count = new_outputs;
 	weights = new_weights;
 }
+
+void NeuralNetwork::setInputCount( unsigned int input_count ) {
+	input_layer.setInputCount( input_count );
+}
+
+void NeuralNetwork::setOutputCount( unsigned int output_count ) {
+	output_layer.setOutputCount( output_count );
+}
+
+void NeuralNetwork::setHiddenNeuronCount( unsigned int hidden_neuron_count ) {
+	hidden_neurons = hidden_neuron_count;
+	input_layer.setOutputCount( hidden_neurons );
+	output_layer.setInputCount( hidden_neurons );
+
+	for( unsigned int i = 0; i < hidden_layers.size(); ++i ) {
+		hidden_layers[ i ].setInputCount( hidden_neurons );
+		hidden_layers[ i ].setOutputCount( hidden_neurons );
+	}
+}
+
+const NeuronLayer& NeuralNetwork::getLayer( unsigned int layer_number ) const {
+	return hidden_layers[ layer_number ];
+}
+
+void NeuralNetwork::setLayerCount( unsigned int hidden_layer_count ) {
+	hidden_layers.resize( hidden_layer_count );
+	setHiddenNeuronCount( hidden_neurons );
+}

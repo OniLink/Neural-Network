@@ -67,4 +67,46 @@ class NeuronLayer {
 		void resizeMatrix( unsigned int new_inputs, unsigned int new_outputs );
 };
 
+class NeuralNetwork {
+	public:
+		/**
+		 * Set the number of inputs to the network.
+		 * @param input_count The number of inputs to the network.
+		 */
+		void setInputCount( unsigned int input_count );
+
+		/**
+		 * Set the number of outputs from the network.
+		 * @param output_count The number of outputs from the network.
+		 */
+		void setOutputCount( unsigned int output_count );
+
+		/**
+		 * Set the number of neurons found in each hidden layer.
+		 * @param hidden_neuron_count The number of neurons per hidden layer.
+		 */
+		void setHiddenNeuronCount( unsigned int hidden_neuron_count );
+
+		/**
+		 * Get a hidden layer from the network.
+		 * @param layer_number The layer to retrieve.
+		 * @return The hidden layer at index (layer_number).
+		 */
+		const NeuronLayer& getLayer( unsigned int layer_number ) const;
+
+		/**
+		 * Set the number of hidden layers.
+		 * @param hidden_layers The number of hidden layers.
+		 */
+		void setLayerCount( unsigned int hidden_layer_count );
+
+	private:
+		unsigned int hidden_neurons;
+
+		NeuronLayer input_layer;
+		NeuronLayer output_layer;
+
+		std::vector< NeuronLayer > hidden_layers;
+};
+
 #endif // NEURAL_NETWORK_HPP
