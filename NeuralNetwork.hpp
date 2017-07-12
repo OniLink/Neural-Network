@@ -70,6 +70,13 @@ class NeuronLayer {
 class NeuralNetwork {
 	public:
 		/**
+		 * Propagate data through the neural network.
+		 * @param input_data The data to feed in.
+		 * @return The output of the neural network.
+		 */
+		std::vector< float > propagate( std::vector< float > input_data );
+
+		/**
 		 * Set the number of inputs to the network.
 		 * @param input_count The number of inputs to the network.
 		 */
@@ -101,6 +108,20 @@ class NeuralNetwork {
 		void setLayerCount( unsigned int hidden_layer_count );
 
 	private:
+		/**
+		 * Flatten a data layer to the range [-1, 1] (for hidden layers).
+		 * @param data The data to flatten.
+		 * @return The flattened data.
+		 */
+		std::vector< float > flattenHiddenLayer( const std::vector< float >& data );
+
+		/**
+		 * Flatten a data layer to the range [0, 1] (for output layers).
+		 * @param data The data to flatten.
+		 * @return The flattened data.
+		 */
+		std::vector< float > flattenOutputLayer( const std::vector< float >& data );
+
 		unsigned int hidden_neurons;
 
 		NeuronLayer input_layer;

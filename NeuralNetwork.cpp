@@ -1,5 +1,7 @@
 #include "NeuralNetwork.hpp"
 
+#include <cmath>
+
 std::vector< float > NeuronLayer::propagate( std::vector< float > inputs ) {
 	inputs.resize( input_count, 0.f ); // Ensure proper amount of input data.
 	inputs[ input_count - 1 ] = 1.f; // Bias
@@ -60,6 +62,21 @@ void NeuronLayer::resizeMatrix( unsigned int new_inputs, unsigned int new_output
 	weights = new_weights;
 }
 
+std::vector< float > NeuralNetwork::propagate( std::vector< float > input_data ) {
+	input_data.resize( input_layer.getInputCount() );
+
+	std::vector< float > hidden_data = input_layer.propagate( input_data );
+	hidden_data = flattenHiddenLayer( hidden_data );
+
+	for( unsigned int i = 0; i < hidden_layers; ++i ) {
+		hidden_data = hidden_layers[ i ].propagate( hidden_data );
+		hidden_data = flattenHiddenLayer( hidden_data );
+	}
+
+	std::vector< float > output_data = output_layer.propagate( hidden_data );
+	return flattenOutputLayer( output_data );
+}
+
 void NeuralNetwork::setInputCount( unsigned int input_count ) {
 	input_layer.setInputCount( input_count );
 }
@@ -86,4 +103,25 @@ const NeuronLayer& NeuralNetwork::getLayer( unsigned int layer_number ) const {
 void NeuralNetwork::setLayerCount( unsigned int hidden_layer_count ) {
 	hidden_layers.resize( hidden_layer_count );
 	setHiddenNeuronCount( hidden_neurons );
+}
+
+void NeuralNetwork::flattenHiddenLayer( const std::vector< float >& data ) {
+	std::vector< float > flat( data.size() );
+
+	for( unsigned int i = 0; i < data.size(); ++i ) {
+		flat[ i ] = std::tanh( data[ i ] );
+	}
+
+	return flat;
+}
+
+void NeuralNetwork::flattenOutputLayer( const std::vector< float >& data ) {
+	std::vector< float > flat( data.size() );
+
+	for( unsigned int i = 0; i < data.size(); ++i ) {
+		flat[ i ] = 1.f / ( 1.f + std::exp( -4.f * data[ i ] ) ); // Picked a rate of 4 so Taylor
+																  // Expansion is 0.5 + x + O(x^3)
+	}
+
+	return flat;
 }
