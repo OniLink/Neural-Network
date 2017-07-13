@@ -77,6 +77,22 @@ class NeuralNetwork {
 		std::vector< float > propagate( std::vector< float > input_data );
 
 		/**
+		 * Use back propagation to train the Neural Network.
+		 * @param input_data The input data to train with.
+		 * @param output_data The expected output data given the input.
+		 * @param mutability How much the network is allowed to change.
+		 */
+		void backPropagate( std::vector< float > input_data, std::vector< float > output_data,
+							 float mutability = 0.05 );
+
+		/**
+		 * Calculate the loss from the input to the output given an expected output.
+		 * @param input_data The input to test for loss.
+		 * @param output_data The expected output for the given input.
+		 */
+		float loss( std::vector< float > input_data, std::vector< float > output_data );
+
+		/**
 		 * Set the number of inputs to the network.
 		 * @param input_count The number of inputs to the network.
 		 */
@@ -99,7 +115,7 @@ class NeuralNetwork {
 		 * @param layer_number The layer to retrieve.
 		 * @return The hidden layer at index (layer_number).
 		 */
-		const NeuronLayer& getLayer( unsigned int layer_number ) const;
+		NeuronLayer& getLayer( unsigned int layer_number );
 
 		/**
 		 * Set the number of hidden layers.
@@ -108,20 +124,6 @@ class NeuralNetwork {
 		void setLayerCount( unsigned int hidden_layer_count );
 
 	private:
-		/**
-		 * Flatten a data layer to the range [-1, 1] (for hidden layers).
-		 * @param data The data to flatten.
-		 * @return The flattened data.
-		 */
-		std::vector< float > flattenHiddenLayer( const std::vector< float >& data );
-
-		/**
-		 * Flatten a data layer to the range [0, 1] (for output layers).
-		 * @param data The data to flatten.
-		 * @return The flattened data.
-		 */
-		std::vector< float > flattenOutputLayer( const std::vector< float >& data );
-
 		unsigned int hidden_neurons;
 
 		NeuronLayer input_layer;
@@ -129,5 +131,12 @@ class NeuralNetwork {
 
 		std::vector< NeuronLayer > hidden_layers;
 };
+
+/**
+ * Flatten data to the range [-1, 1].
+ * @param data The data to flatten.
+ * @return The flattened data.
+ */
+std::vector< float > flattenData( const std::vector< float >& data );
 
 #endif // NEURAL_NETWORK_HPP
