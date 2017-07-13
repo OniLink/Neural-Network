@@ -29,6 +29,20 @@ class NeuronLayer {
 		void setWeight( unsigned int input, unsigned int output, float weight );
 
 		/**
+		 * Get the bias for a given output.
+		 * @param output The output to get the bias for.
+		 * @return The bias for the specified output.
+		 */
+		float getBias( unsigned int output );
+
+		/**
+		 * Set the bias for a given output.
+		 * @param output The output to bias.
+		 * @param new_bias The bias to give to the output.
+		 */
+		void setBias( unsigned int output, float new_bias );
+
+		/**
 		 * Get the number of inputs to the neural layer.
 		 * @return The number of inputs to the neural layer.
 		 */
@@ -57,6 +71,7 @@ class NeuronLayer {
 		unsigned int output_count;
 
 		std::vector< float > weights;
+		std::vector< float > bias;
 
 		/**
 		 * Resize the weight matrix, preserving as many values as possible.

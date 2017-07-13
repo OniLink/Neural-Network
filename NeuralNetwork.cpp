@@ -5,12 +5,11 @@
 
 std::vector< float > NeuronLayer::propagate( std::vector< float > inputs ) {
 	inputs.resize( input_count, 0.f ); // Ensure proper amount of input data.
-	inputs[ input_count - 1 ] = 1.f; // Bias
 
 	std::vector< float > outputs( output_count, 0.f );
 
 	for( unsigned int y = 0; y < output_count; ++y ) {
-		float output = 0.f;
+		float output = bias[ y ];
 		for( unsigned int x = 0; x < input_count; ++x ) {
 			output += getWeight( x, y ) * inputs[ x ];
 		}
@@ -32,8 +31,17 @@ void NeuronLayer::setWeight( unsigned int input, unsigned int output, float weig
 	weights[ output * input_count + input ] = weight;
 }
 
+float NeuronLayer::getBias( unsigned int output ) {
+	output %= output_count;
+	return bias[ output ];
+}
+
+void NeuronLayer::setBias( unsigned int output, float new_bias ) {
+	bias[ output ] = new_bias;
+}
+
 unsigned int NeuronLayer::getInputCount() const {
-	return input_count - 1; // Minus 1 for bias input.
+	return input_count;
 }
 
 unsigned int NeuronLayer::getOutputCount() const {
@@ -49,7 +57,6 @@ void NeuronLayer::setOutputCount( unsigned int outputs ) {
 }
 
 void NeuronLayer::resizeMatrix( unsigned int new_inputs, unsigned int new_outputs ) {
-	new_inputs += 1; // Add 1 for the bias input
 	std::vector< float > new_weights( new_inputs * new_outputs, 0.f );
 
 	for( unsigned int y = 0; y < output_count && y < new_outputs; ++y ) {
@@ -149,6 +156,9 @@ void NeuralNetwork::backPropagate( std::vector< float > input_data,
 			float adjust = mutability * input_deltas[ i ] * input_data[ j ];
 			input_layer.setWeight( j, i, input_layer.getWeight( j, i ) - adjust );
 		}
+
+		float adjust = mutability * input_deltas[ i ];
+		input_layer.setBias( i, input_layer.getBias( i ) - adjust );
 	}
 
 	for( unsigned int k = 0; k < hidden_layers.size(); ++k ) {
@@ -164,6 +174,9 @@ void NeuralNetwork::backPropagate( std::vector< float > input_data,
 
 				getLayer( k ).setWeight( j, i, getLayer( k ).getWeight( j, i ) - adjust );
 			}
+
+			float adjust = mutability * intermediate_deltas[ k ][ i ];
+			getLayer( k ).setBias( i, getLayer( k ).getBias( i ) - adjust );
 		}
 	}
 
@@ -179,6 +192,9 @@ void NeuralNetwork::backPropagate( std::vector< float > input_data,
 
 			output_layer.setWeight( j, i, output_layer.getWeight( j, i ) - adjust );
 		}
+
+		float adjust = mutability * output_deltas[ i ];
+		output_layer.setBias( i, output_layer.getBias( i ) - adjust );
 	}
 }
 
