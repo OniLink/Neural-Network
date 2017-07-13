@@ -5,6 +5,8 @@
 
 class NeuronLayer {
 	public:
+		NeuronLayer();
+
 		/**
 		 * Propagate information through the layer.
 		 * @param inputs The inputs to feed into the neuron layer.
@@ -84,6 +86,8 @@ class NeuronLayer {
 
 class NeuralNetwork {
 	public:
+		NeuralNetwork();
+
 		/**
 		 * Propagate data through the neural network.
 		 * @param input_data The data to feed in.
@@ -106,6 +110,18 @@ class NeuralNetwork {
 		 * @param output_data The expected output for the given input.
 		 */
 		float loss( std::vector< float > input_data, std::vector< float > output_data );
+
+		/**
+		 * Get the number of inputs to the network.
+		 * @return The number of inputs to the network.
+		 */
+		unsigned int getInputCount() const;
+
+		/**
+		 * Get the number of outputs from the network.
+		 * @return The number of outputs from the network.
+		 */
+		unsigned int getOutputCount() const;
 
 		/**
 		 * Set the number of inputs to the network.

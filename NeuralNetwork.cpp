@@ -3,6 +3,11 @@
 #include <cmath>
 #include <algorithm>
 
+NeuronLayer::NeuronLayer() {
+	setInputCount( 0 );
+	setOutputCount( 0 );
+}
+
 std::vector< float > NeuronLayer::propagate( std::vector< float > inputs ) {
 	inputs.resize( input_count, 0.f ); // Ensure proper amount of input data.
 
@@ -54,6 +59,7 @@ void NeuronLayer::setInputCount( unsigned int inputs ) {
 
 void NeuronLayer::setOutputCount( unsigned int outputs ) {
 	resizeMatrix( input_count, outputs );
+	bias.resize( outputs, 0.f );
 }
 
 void NeuronLayer::resizeMatrix( unsigned int new_inputs, unsigned int new_outputs ) {
@@ -68,6 +74,13 @@ void NeuronLayer::resizeMatrix( unsigned int new_inputs, unsigned int new_output
 	input_count = new_inputs;
 	output_count = new_outputs;
 	weights = new_weights;
+}
+
+NeuralNetwork::NeuralNetwork() {
+	setInputCount( 0 );
+	setOutputCount( 0 );
+	setHiddenNeuronCount( 0 );
+	setLayerCount( 0 );
 }
 
 std::vector< float > NeuralNetwork::propagate( std::vector< float > input_data ) {
@@ -211,6 +224,14 @@ float NeuralNetwork::loss( std::vector< float > input_data, std::vector< float >
 	}
 
 	return 0.5f * loss_value;
+}
+
+unsigned int NeuralNetwork::getInputCount() const {
+	return input_layer.getInputCount();
+}
+
+unsigned int NeuralNetwork::getOutputCount() const {
+	return output_layer.getOutputCount();
 }
 
 void NeuralNetwork::setInputCount( unsigned int input_count ) {
