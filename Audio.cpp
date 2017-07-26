@@ -1,15 +1,16 @@
-#include "NeuralNetwork.hpp"
+#include "LinearAlgebra.hpp"
+#include "NeuralNet.hpp"
 
-#include <cmath>
 #include <iostream>
+#include <memory>
 #include <string>
-#include <vector>
 #include <SFML/Audio/InputSoundFile.hpp>
 #include <SFML/Audio/OutputSoundFile.hpp>
 
-NeuralNetwork network;
-std::vector< float > memory;
+Vector< float > memory( 0 );
 unsigned int sample_rate;
+unsigned int memory_samples;
+std::unique_ptr< NeuralNetwork > network;
 
 void instructGenerate();
 void instructHelp();
@@ -22,25 +23,20 @@ int main() {
 	std::cout << "Enter desired number of hidden neuron layers: ";
 	std::cin >> neuron_layers;
 
-	network.setLayerCount( neuron_layers );
-
 	unsigned int neuron_count = 100;
 	std::cout << "Enter neurons per hidden layer: ";
 	std::cin >> neuron_count;
-
-	network.setHiddenNeuronCount( 100 );
 
 	sample_rate = 48000;
 	std::cout << "Enter the number of audio samples per second: ";
 	std::cin >> sample_rate;
 
-	float memory_length = 1.f;
-	std::cout << "Enter network memory in seconds: ";
-	std::cin >> memory_length;
+	memory_samples = 480;
+	std::cout << "Enter network memory in samples: ";
+	std::cin >> memory_samples;
+	memory_samples *= 2; // Stereo
 
-	unsigned int memory_samples = std::ceil( 2 * memory_length * sample_rate );
-	network.setInputCount( memory_samples );
-	network.setOutputCount( 2 );
+	network = std::make_unique< NeuralNetwork >( memory_samples, 2, neuron_layers, neuron_count );
 
 	std::cout << "Use command 'h' for help\n";
 
@@ -88,24 +84,25 @@ void instructGenerate() {
 	length_samples *= sample_rate;
 
 	sf::OutputSoundFile output_file;
-	if( !output_file.openFromFile( output_filename, 48000, 2 ) ) {
+	if( !output_file.openFromFile( output_filename, sample_rate, 2 ) ) {
 		std::cout << "Failed to open output file\n";
 		return;
 	}
 
-	memory.clear();
-	memory.resize( network.getInputCount(), 0.f );
-
+	memory = Vector< float >( memory_samples );
 	std::vector< sf::Int16 > output_samples;
 
 	for( unsigned int i = 0; i < length_samples; ++i ) {
-		std::vector< float > sample = network.propagate( memory );
-		output_samples.push_back( sample[ 0 ] * 65535 - 36768 );
-		output_samples.push_back( sample[ 1 ] * 65535 - 36768 );
-		memory.push_back( sample[ 0 ] );
-		memory.push_back( sample[ 1 ] );
-		memory.erase( memory.begin() );
-		memory.erase( memory.begin() );
+		if( i % sample_rate == 0 ) {
+			std::cout << i << '/' << length_samples << " samples rendered\n";
+		}
+		Vector< float > sample = network->propagate( memory );
+		output_samples.push_back( sample.at( 0 ) * 65535 - 36768 );
+		output_samples.push_back( sample.at( 1 ) * 65535 - 36768 );
+		memory.getInternalData().push_back( sample.at( 0 ) );
+		memory.getInternalData().push_back( sample.at( 1 ) );
+		memory.getInternalData().erase( memory.getInternalData().begin() );
+		memory.getInternalData().erase( memory.getInternalData().begin() );
 	}
 
 	output_file.write( output_samples.data(), output_samples.size() );
@@ -120,8 +117,7 @@ void instructHelp() {
 }
 
 std::vector< float > readSamples( sf::InputSoundFile& input_file ) {
-	std::uint64_t sample_count = input_file.getSampleCount();
-	std::vector< float > training_samples( sample_count );
+	std::vector< float > training_samples( 0 );
 	sf::Int16 samples_in[ 1024 ];
 	sf::Uint64 read_count = 0;
 
@@ -155,36 +151,44 @@ void instructTrain() {
 	std::cout << "Enter filename of training file: ";
 	std::cin >> training_filename;
 
-	std::vector< float > training_samples = readTrainingFile( training_filename );
+	unsigned int epochs = 1;
+	std::cout << "Enter number of epochs to train for: ";
+	std::cin >> epochs;
 
-	if( training_samples.size() == 0 ) {
+	std::vector< float > training_samples_init = readTrainingFile( training_filename );
+
+	if( training_samples_init.size() == 0 ) {
 		return;
 	}
 
-	memory.clear();
-	memory.resize( network.getInputCount(), 0.f );
+	Vector< float > training_samples( training_samples_init.size() );
+	training_samples.getInternalData() = training_samples_init;
 
-	float loss = 0.f;
-
-	unsigned int ten_percent = training_samples.size() / 10;
+	memory = Vector< float >( memory_samples );
 
 	std::cout << "This may take a while...\n";
 
-	for( unsigned int i = 0; i < training_samples.size() - 1; i += 2 ) {
-		std::vector< float > expected_sample;
-		expected_sample.push_back( training_samples[ i ] );
-		expected_sample.push_back( training_samples[ i + 1 ] );
+	for( unsigned int e = 0; e < epochs; ++e ) {
+		std::cout << "Training epoch " << e << std::endl;
+		for( unsigned int i = 0; i < training_samples.getLength() - 1; i += 2 ) {
+			if( i % sample_rate == 0 ) {
+				std::cout << i << '/' << training_samples.getLength() << " samples complete\n";
+			}
 
-		network.backPropagate( memory, expected_sample, 0.05 );
-		loss += network.loss( memory, expected_sample );
+			Vector< float > expected_sample( 2 );
+			expected_sample.at( 0 ) = training_samples.at( i );
+			expected_sample.at( 1 ) = training_samples.at( i + 1 );
 
-		memory.push_back( training_samples[ i ] );
-		memory.push_back( training_samples[ i + 1 ] );
-		memory.erase( memory.begin() );
-		memory.erase( memory.begin() );
+			network->backPropagate( memory, expected_sample, 0.05 );
 
-		if( i % ten_percent == 0 ) {
-			std::cout << i / ten_percent * 10 << "% complete\n";
+			memory.getInternalData().push_back( training_samples.at( i ) );
+			memory.getInternalData().push_back( training_samples.at( i + 1 ) );
+			memory.getInternalData().erase( memory.getInternalData().begin() );
+			memory.getInternalData().erase( memory.getInternalData().begin() );
+
+			if( i % sample_rate == 0 ) {
+				std::cout << "Loss on current sample: " << network->loss( memory, expected_sample ) << '\n';
+			}
 		}
 	}
 }
