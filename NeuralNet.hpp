@@ -10,14 +10,14 @@
  * @param input The data to apply the logistic map to.
  * @return The flattened data.
  */
-Vector< float > logistic( Vector< float > input ) {
+Vector logistic( Vector input ) {
 	for( unsigned int i = 0; i < input.getLength(); ++i ) {
 		input.at( i ) = 1.f / ( 1.f + std::exp( -input.at( i ) ) );
 	}
 	return input;
 }
 
-Vector< float > logisticDerivative( Vector< float > input ) {
+Vector logisticDerivative( Vector input ) {
 	for( unsigned int i = 0; i < input.getLength(); ++i ) {
 		input.at( i ) = input.at( i ) * ( 1.f - input.at( i ) );
 	}
@@ -31,14 +31,14 @@ class NeuralNetwork {
 		unsigned int layers;
 		unsigned int neurons;
 
-		Matrix< float > input_layer;
-		Vector< float > input_bias;
+		Matrix input_layer;
+		Vector input_bias;
 
-		std::vector< Matrix< float > > hidden_layers;
-		std::vector< Vector< float > > hidden_biases;
+		std::vector< Matrix > hidden_layers;
+		std::vector< Vector > hidden_biases;
 
-		Matrix< float > output_layer;
-		Vector< float > output_bias;
+		Matrix output_layer;
+		Vector output_bias;
 
 	public:
 		/**
@@ -65,12 +65,12 @@ class NeuralNetwork {
 		 * @param input The input to run through the neural network.
 		 * @return The output data from the neural network.
 		 */
-		Vector< float > propagate( Vector< float >& input ) {
+		Vector propagate( Vector& input ) {
 			if( input.getLength() != inputs ) {
-				return Vector< float >( outputs );
+				return Vector( outputs );
 			}
 
-			Vector< float > hidden_data = logistic( input_layer * input + input_bias );
+			Vector hidden_data = logistic( input_layer * input + input_bias );
 
 			for( unsigned int i = 0; i < hidden_layers.size(); ++i ) {
 				hidden_data = logistic( hidden_layers[ i ] * hidden_data + hidden_biases[ i ] );
@@ -85,39 +85,39 @@ class NeuralNetwork {
 		 * @param output The expected output data.
 		 * @param mutability The amount by which the neural network is allowed to change.
 		 */
-		void backPropagate( Vector< float >& input, Vector< float >& output, float mutability = 0.05f ) {
+		void backPropagate( Vector& input, Vector& output, float mutability = 0.05f ) {
 			// Propagate forward and record results
-			Vector< float > input_results = logistic( input_layer * input + input_bias );
-			Vector< float > hidden_results = input_results;
-			std::vector< Vector< float > > intermediate_results( hidden_layers.size(), neurons );
+			Vector input_results = logistic( input_layer * input + input_bias );
+			Vector hidden_results = input_results;
+			std::vector< Vector > intermediate_results( hidden_layers.size(), neurons );
 			for( unsigned int i = 0; i < hidden_layers.size(); ++i ) {
 				hidden_results = logistic( hidden_layers[ i ] * hidden_results + hidden_biases[ i ] );
 				intermediate_results[ i ] =  hidden_results;
 			}
-			Vector< float > output_results = logistic( output_layer * hidden_results + output_bias );
+			Vector output_results = logistic( output_layer * hidden_results + output_bias );
 
 			// Work backwards to calculate deltas
-			Vector< float > output_deltas = ( output_results - output ).hadamard( logisticDerivative( output_results ) );
-			Vector< float > previous_deltas = output_deltas;
-			Matrix< float > previous_layer = output_layer;
-			std::vector< Vector< float > > intermediate_deltas( hidden_layers.size(), neurons );
+			Vector output_deltas = ( output_results - output ).hadamard( logisticDerivative( output_results ) );
+			Vector previous_deltas = output_deltas;
+			Matrix previous_layer = output_layer;
+			std::vector< Vector > intermediate_deltas( hidden_layers.size(), neurons );
 
 			for( int i = hidden_layers.size() - 1; i >= 0; --i ) {
-				Vector< float > delta_left = previous_deltas * previous_layer;
-				Vector< float > delta_right = logisticDerivative( intermediate_results[ i ] );
-				Vector< float > deltas = delta_left.hadamard( delta_right );
+				Vector delta_left = previous_deltas * previous_layer;
+				Vector delta_right = logisticDerivative( intermediate_results[ i ] );
+				Vector deltas = delta_left.hadamard( delta_right );
 				intermediate_deltas[ i ] = deltas;
 
 				previous_layer = hidden_layers[ i ];
 				previous_deltas = deltas;
 			}
 
-			Vector< float > input_deltas = ( previous_deltas * previous_layer ).hadamard( logisticDerivative( input_results ) );
+			Vector input_deltas = ( previous_deltas * previous_layer ).hadamard( logisticDerivative( input_results ) );
 
 			// Update Weights
 			input_layer = input_layer - mutability * input * input_deltas;
 			input_bias = input_bias - mutability * input_deltas;
-			Vector< float > previous_results = input_results;
+			Vector previous_results = input_results;
 
 			for( unsigned int i = 0; i < hidden_layers.size(); ++i ) {
 				hidden_layers[ i ] = hidden_layers[ i ] - mutability * previous_results * intermediate_deltas[ i ];
@@ -129,12 +129,12 @@ class NeuralNetwork {
 			output_bias = output_bias - mutability * output_deltas;
 		}
 
-		float loss( Vector< float >& input, Vector< float >& output ) {
+		float loss( Vector& input, Vector& output ) {
 			if( input.getLength() != inputs || output.getLength() != outputs ) {
 				return -1.f;
 			}
 
-			Vector< float > results = propagate( input );
+			Vector results = propagate( input );
 			float loss_value = 0.f;
 			for( unsigned int i = 0; i < output.getLength(); ++i ) {
 				float error = results.at( i ) - output.at( i );

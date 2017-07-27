@@ -7,7 +7,7 @@
 #include <SFML/Audio/InputSoundFile.hpp>
 #include <SFML/Audio/OutputSoundFile.hpp>
 
-Vector< float > memory( 0 );
+Vector memory( 0 );
 unsigned int sample_rate;
 unsigned int memory_samples;
 std::unique_ptr< NeuralNetwork > network;
@@ -18,6 +18,12 @@ void instructTrain();
 
 int main() {
 	std::cout << "Welcome to the audio-based neural network test!\n";
+
+	if( lasettings::setupOpenCL() ) {
+		std::cout << "Using OpenCL optimizations\n";
+	} else {
+		std::cout << "Not using OpenCL optimizations, program will run significantly slower\n";
+	}
 
 	unsigned int neuron_layers = 1;
 	std::cout << "Enter desired number of hidden neuron layers: ";
@@ -89,14 +95,14 @@ void instructGenerate() {
 		return;
 	}
 
-	memory = Vector< float >( memory_samples );
+	memory = Vector( memory_samples );
 	std::vector< sf::Int16 > output_samples;
 
 	for( unsigned int i = 0; i < length_samples; ++i ) {
 		if( i % sample_rate == 0 ) {
 			std::cout << i << '/' << length_samples << " samples rendered\n";
 		}
-		Vector< float > sample = network->propagate( memory );
+		Vector sample = network->propagate( memory );
 		output_samples.push_back( sample.at( 0 ) * 65535 - 36768 );
 		output_samples.push_back( sample.at( 1 ) * 65535 - 36768 );
 		memory.getInternalData().push_back( sample.at( 0 ) );
@@ -161,10 +167,10 @@ void instructTrain() {
 		return;
 	}
 
-	Vector< float > training_samples( training_samples_init.size() );
+	Vector training_samples( training_samples_init.size() );
 	training_samples.getInternalData() = training_samples_init;
 
-	memory = Vector< float >( memory_samples );
+	memory = Vector( memory_samples );
 
 	std::cout << "This may take a while...\n";
 
@@ -175,7 +181,7 @@ void instructTrain() {
 				std::cout << i << '/' << training_samples.getLength() << " samples complete\n";
 			}
 
-			Vector< float > expected_sample( 2 );
+			Vector expected_sample( 2 );
 			expected_sample.at( 0 ) = training_samples.at( i );
 			expected_sample.at( 1 ) = training_samples.at( i + 1 );
 
