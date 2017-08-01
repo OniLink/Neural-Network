@@ -5,8 +5,6 @@
 #include <vector>
 #include "cl.hpp"
 
-
-
 namespace lasettings {
 bool use_opencl = false;
 cl::Context opencl_context;
