@@ -163,8 +163,8 @@ class NeuralNetwork {
 					   unsigned int layer_count, unsigned int neuron_count ) :
 			inputs( input_count ), outputs( output_count ),
 			layers( layer_count ), neurons( neuron_count ),
-			input_layer( input_count, neuron_count ), input_bias( neuron_count ),
-			output_layer( neuron_count, output_count ), output_bias( output_count ) {
+			input_layer( neuron_count, input_count ), input_bias( neuron_count ),
+			output_layer( output_count, neuron_count ), output_bias( output_count ) {
 			for( unsigned int i = 0; i < layers; ++i ) {
 				hidden_layers.emplace_back( neuron_count, neuron_count );
 				hidden_biases.emplace_back( neuron_count );
@@ -174,7 +174,12 @@ class NeuralNetwork {
 		}
 
 		Vector propagateLayer( Vector& input, Matrix& matrix, Vector& bias ) {
-			if( input.getLength() != bias.getLength() || input.getLength() != matrix.getWidth() ) {
+			if( input.getLength() != matrix.getWidth() || matrix.getHeight() != bias.getLength() ) {
+				std::cout << "Cannot propagate layer:\n";
+				std::cout << "Input length: " << input.getLength() << std::endl;
+				std::cout << "Matrix width: " << matrix.getWidth() << std::endl;
+				std::cout << "Matrix height: " << matrix.getHeight() << std::endl;
+				std::cout << "Bias length: " << bias.getLength() << std::endl;
 				return Vector( 0 );
 			}
 
