@@ -14,10 +14,10 @@ const std::string code_propagate_layer =
 	"								__global float* output ) {\n"
 	"	const int index = get_global_id( 0 );\n"
 	"	float accum = bias[ index ];\n"
-	"	for( int i = 0; i < N; ++i ) {\n"
+	"	for( unsigned int i = 0; i < N; ++i ) {\n"
 	"		accum += matrix[ index * N + i ] * input[ i ];\n"
 	"	}\n"
-	"	output[ index ] = 1.f / ( 1.f + exp( -accum ) )\n;"
+	"	output[ index ] = 1.f / ( 1.f + exp( -accum ) );\n"
 	"}\n";
 
 /**
@@ -123,16 +123,16 @@ class NeuralNetwork {
 			cl::Buffer output_buffer( opencl_context, CL_MEM_WRITE_ONLY,
 									  sizeof( float ) * matrix.getHeight() );
 
-			opencl_queue.enqueueWriteBuffer( width_buffer, CL_FALSE, 0,
+			opencl_queue.enqueueWriteBuffer( width_buffer, CL_TRUE, 0,
 											 sizeof( unsigned int ),
 											 &matrix_width );
-			opencl_queue.enqueueWriteBuffer( input_buffer, CL_FALSE, 0,
+			opencl_queue.enqueueWriteBuffer( input_buffer, CL_TRUE, 0,
 											 sizeof( float ) * input.getLength(),
 											 input.getInternalData().data() );
-			opencl_queue.enqueueWriteBuffer( matrix_buffer, CL_FALSE, 0,
+			opencl_queue.enqueueWriteBuffer( matrix_buffer, CL_TRUE, 0,
 											 sizeof( float ) * matrix.getWidth() * matrix.getHeight(),
 											 input.getInternalData().data() );
-			opencl_queue.enqueueWriteBuffer( bias_buffer, CL_FALSE, 0,
+			opencl_queue.enqueueWriteBuffer( bias_buffer, CL_TRUE, 0,
 											 sizeof( float ) * bias.getLength(),
 											 bias.getInternalData().data() );
 
@@ -144,9 +144,9 @@ class NeuralNetwork {
 
 			opencl_queue.enqueueNDRangeKernel( kernel_propagate_layer, cl::NullRange,
 											   cl::NDRange( matrix.getHeight() ), cl::NullRange );
-			opencl_queue.finish();
 			opencl_queue.enqueueReadBuffer( output_buffer, CL_TRUE, 0, sizeof( float ) * matrix.getHeight(),
 											output.getInternalData().data() );
+			opencl_queue.finish();
 
 			return output;
 		}
@@ -201,7 +201,10 @@ class NeuralNetwork {
 		 */
 		Vector propagate( Vector& input ) {
 			if( input.getLength() != inputs ) {
-				return Vector( outputs );
+				std::cout << "Cannot propagate network:\n";
+				std::cout << "Input length: " << input.getLength() << std::endl;
+				std::cout << "Expected input length: " << inputs << std::endl;
+				return Vector( 0 );
 			}
 
 			Vector hidden_data = propagateLayer( input, input_layer, input_bias );
@@ -227,7 +230,7 @@ class NeuralNetwork {
 			std::vector< Vector > intermediate_results( hidden_layers.size(), neurons );
 			for( unsigned int i = 0; i < hidden_layers.size(); ++i ) {
 				hidden_results = propagateLayer( hidden_results, hidden_layers[ i ], hidden_biases[ i ] );
-				intermediate_results[ i ] =  hidden_results;
+				intermediate_results[ i ] = hidden_results;
 			}
 
 			Vector output_results = propagateLayer( hidden_results, output_layer, output_bias );
@@ -272,6 +275,7 @@ class NeuralNetwork {
 
 			Vector results = propagate( input );
 			float loss_value = 0.f;
+
 			for( unsigned int i = 0; i < output.getLength(); ++i ) {
 				float error = results.at( i ) - output.at( i );
 				loss_value += error * error;

@@ -99,7 +99,7 @@ void instructGenerate() {
 	std::vector< sf::Int16 > output_samples;
 
 	for( unsigned int i = 0; i < length_samples; ++i ) {
-		if( i % sample_rate == 0 ) {
+		if( i % 1000 == 0 ) {
 			std::cout << i << '/' << length_samples << " samples rendered\n";
 		}
 		Vector sample = network->propagate( memory );
@@ -161,14 +161,12 @@ void instructTrain() {
 	std::cout << "Enter number of epochs to train for: ";
 	std::cin >> epochs;
 
-	std::vector< float > training_samples_init = readTrainingFile( training_filename );
+	Vector training_samples( 0 );
+	training_samples.getInternalData() = readTrainingFile( training_filename );
 
-	if( training_samples_init.size() == 0 ) {
+	if( training_samples.getLength() == 0 ) {
 		return;
 	}
-
-	Vector training_samples( training_samples_init.size() );
-	training_samples.getInternalData() = training_samples_init;
 
 	memory = Vector( memory_samples );
 
@@ -177,7 +175,7 @@ void instructTrain() {
 	for( unsigned int e = 0; e < epochs; ++e ) {
 		std::cout << "Training epoch " << e << std::endl;
 		for( unsigned int i = 0; i < training_samples.getLength() - 1; i += 2 ) {
-			if( i % sample_rate == 0 ) {
+			if( i % 1000 == 0 ) {
 				std::cout << i << '/' << training_samples.getLength() << " samples complete\n";
 			}
 
@@ -192,7 +190,7 @@ void instructTrain() {
 			memory.getInternalData().erase( memory.getInternalData().begin() );
 			memory.getInternalData().erase( memory.getInternalData().begin() );
 
-			if( i % sample_rate == 0 ) {
+			if( i % 1000 == 0 ) {
 				std::cout << "Loss on current sample: " << network->loss( memory, expected_sample ) << '\n';
 			}
 		}
