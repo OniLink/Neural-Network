@@ -5,8 +5,8 @@ CONFIG -= qt
 LIBS += -lsfml-audio -fopenmp
 
 SOURCES += \
-    Audio.cpp \
-	jsoncpp.cpp
+	jsoncpp.cpp \
+    Audio.cpp
 
 HEADERS += \
     NetworkLayer.hpp \

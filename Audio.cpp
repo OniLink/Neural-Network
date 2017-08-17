@@ -56,7 +56,7 @@ void setupNetwork() {
 			layer->setInputCount( 0 );
 		}
 
-		unsigned int outputs = channel_count * chunk_size * 2;
+		unsigned int outputs = channel_count * step_size * 2;
 
 		if( i != layer_count - 1 ) {
 			std::cout << "Enter the number of outputs to the layer: ";
@@ -104,9 +104,16 @@ void instructGenerate() {
 		// Channel Count< Frequencies< Magnitude > >
 		std::vector< std::vector< std::complex< float > > > chunk_data( channel_count, std::vector< std::complex< float > >( chunk_size ) );
 
-		for( unsigned int j = 0; j < sample.getDimension(); j += channel_count * 2 ) {
+		for( unsigned int j = 0; j < step_size; ++j ) {
 			for( unsigned int c = 0; c < channel_count; ++c ) {
-				chunk_data[ c ][ i ] = std::complex< float >( sample( j + c*2 ), sample( j + 1 + c*2 ) );
+				unsigned int sample_pos = 2 * ( channel_count * j + c );
+				chunk_data[ c ][ j ] = std::complex< float >( sample( sample_pos ), sample( sample_pos + 1 ) );
+			}
+		}
+
+		for( unsigned int j = 1; j < step_size; ++j ) {
+			for( unsigned int c = 0; c < channel_count; ++c ) {
+				chunk_data[ c ][ chunk_size - j ] = std::conj( chunk_data[ c ][ j ] );
 			}
 		}
 
@@ -346,12 +353,13 @@ void instructTrain() {
 			std::cout << i << '/' << frequency_chunks[ 0 ].size() << " chunks complete\n";
 
 			Vector expected_sample;
-			expected_sample.setDimension( chunk_size * channel_count * 2 );
+			expected_sample.setDimension( step_size * channel_count * 2 );
 
-			for( unsigned int j = 0; j < chunk_size; ++j ) {
+			for( unsigned int j = 0; j < step_size; ++j ) {
 				for( unsigned int c = 0; c < channel_count; ++c ) {
-					expected_sample( ( j * channel_count + c ) * 2 ) = frequency_chunks[ c ][ i ][ j ].real();
-					expected_sample( ( j * channel_count + c ) * 2 + 1 ) = frequency_chunks[ c ][ i ][ j ].imag();
+					unsigned int sample_pos = 2 * ( j * channel_count + c );
+					expected_sample( sample_pos ) = frequency_chunks[ c ][ i ][ j ].real();
+					expected_sample( sample_pos + 1 ) = frequency_chunks[ c ][ i ][ j ].imag();
 				}
 			}
 

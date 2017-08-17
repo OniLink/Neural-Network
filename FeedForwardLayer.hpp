@@ -34,7 +34,7 @@ class FeedForwardLayer : public NetworkLayer {
 			// Init randomly to make rows unique
 			std::random_device device;
 			std::mt19937 generator( device() );
-			std::uniform_real_distribution<> distribution( -1.f, 1.f );
+			std::uniform_real_distribution<> distribution( -0.01f, 0.01f );
 			for( unsigned int x = 0; x < inputs; ++x ) {
 				for( unsigned int y = 0; y < outputs; ++y ) {
 					m_weights( y, x ) = distribution( generator );
@@ -131,7 +131,7 @@ class FeedForwardLayer : public NetworkLayer {
 			for( unsigned int x = 0; x < getInputCount(); ++x ) {
 				float accum = 0.f;
 
-				for( unsigned int y = 0; y < getOutputCount(); ++x ) {
+				for( unsigned int y = 0; y < getOutputCount(); ++y ) {
 					accum += delta( y ) * m_weights( y, x );
 				}
 
