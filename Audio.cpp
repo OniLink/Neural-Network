@@ -53,7 +53,7 @@ void setupNetwork() {
 		} while( !valid );
 
 		if( i == 0 ) {
-			layer->setInputCount( 0 );
+			layer->setInputCount( 1 );
 		}
 
 		unsigned int outputs = channel_count * step_size * 2;
@@ -90,7 +90,7 @@ void instructGenerate() {
 	}
 
 	Vector input;
-	input.setDimension( 0 );
+	input.setDimension( 1 );
 
 	// Multiple Layers
 	// Channel Count< Chunk Count< Frequencies< Magnitude > > >
@@ -99,6 +99,7 @@ void instructGenerate() {
 	for( unsigned int i = 0; i < length_chunks; ++i ) {
 		std::cout << i << '/' << length_chunks << " chunks rendered\n";
 
+		input( 0 ) = 2.f * static_cast< float >( i ) / static_cast< float >( length_chunks ) - 1.f;
 		Vector sample = network.propagate( input );
 
 		// Channel Count< Frequencies< Magnitude > >
@@ -341,7 +342,7 @@ void instructTrain() {
 	std::cin >> mutability;
 
 	Vector input;
-	input.setDimension( 0 );
+	input.setDimension( 1 );
 
 	std::cout << "This may take a while...\n";
 
@@ -350,7 +351,11 @@ void instructTrain() {
 		network.resetState();
 
 		for( unsigned int i = 0; i < frequency_chunks[ 0 ].size(); ++i ) {
-			std::cout << i << '/' << frequency_chunks[ 0 ].size() << " chunks complete\n";
+			if( i % 10 == 0 ) {
+				std::cout << i << '/' << frequency_chunks[ 0 ].size() << " chunks complete\n";
+			}
+
+			input( 0 ) = 2.f * static_cast< float >( i ) / static_cast< float >( frequency_chunks[ 0 ].size() ) - 1.f;
 
 			Vector expected_sample;
 			expected_sample.setDimension( step_size * channel_count * 2 );
@@ -365,7 +370,9 @@ void instructTrain() {
 
 			float loss = network.train( input, expected_sample, mutability );
 
-			std::cout << "Loss on current sample = " << loss << std::endl;
+			if( i % 10 == 0 ) {
+				std::cout << "Loss on current sample = " << loss << std::endl;
+			}
 		}
 	}
 }
